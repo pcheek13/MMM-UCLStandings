@@ -20,7 +20,7 @@ A [MagicMirror²](https://magicmirror.builders/) module that renders the live UE
 2. Clone this repository:
 
    ```bash
-   git clone https://github.com/your-username/MMM-UCLStandings.git
+   git clone https://github.com/pcheek13/MMM-UCLStandings.git
    ```
 
 3. Install the module dependencies:
