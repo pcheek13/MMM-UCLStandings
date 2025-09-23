@@ -6,7 +6,12 @@ Module.register("MMM-UCLStandings", {
     animationSpeed: 1000,
     maxRows: 12,
     showHeader: true,
-    season: "2024-25"
+    season: "2024-25",
+    favoriteTeam: "Arsenal",
+    favoriteTeamLogoUrl: null,
+    teamLogos: {
+      arsenal: "https://upload.wikimedia.org/wikipedia/en/5/53/Arsenal_FC.svg"
+    }
   },
 
   start() {
@@ -15,8 +20,54 @@ Module.register("MMM-UCLStandings", {
     this.loaded = false;
     this.error = null;
     this.updateTimer = null;
+    this.favoriteTeamName = null;
+    this.favoriteTeamNormalized = null;
+    this.favoriteTeamLogoUrl = null;
+
+    this.setFavoriteTeamData();
 
     this.scheduleUpdate(0);
+  },
+
+  setFavoriteTeamData() {
+    if (typeof this.config.favoriteTeam === "string") {
+      const trimmed = this.config.favoriteTeam.trim();
+      if (trimmed.length > 0) {
+        this.favoriteTeamName = trimmed;
+        this.favoriteTeamNormalized = trimmed.toLowerCase();
+      }
+    }
+
+    if (!this.favoriteTeamName) {
+      this.favoriteTeamName = null;
+      this.favoriteTeamNormalized = null;
+    }
+
+    const logoMap = this.config.teamLogos || {};
+
+    if (this.favoriteTeamNormalized) {
+      if (typeof this.config.favoriteTeamLogoUrl === "string" && this.config.favoriteTeamLogoUrl.trim().length > 0) {
+        this.favoriteTeamLogoUrl = this.config.favoriteTeamLogoUrl.trim();
+      } else {
+        this.favoriteTeamLogoUrl = logoMap[this.favoriteTeamNormalized] || null;
+
+        if (!this.favoriteTeamLogoUrl) {
+          const normalizedKeys = Object.keys(logoMap);
+          const matchKey = normalizedKeys.find(
+            (key) =>
+              key === this.favoriteTeamNormalized ||
+              key.includes(this.favoriteTeamNormalized) ||
+              this.favoriteTeamNormalized.includes(key)
+          );
+
+          if (matchKey) {
+            this.favoriteTeamLogoUrl = logoMap[matchKey];
+          }
+        }
+      }
+    } else {
+      this.favoriteTeamLogoUrl = null;
+    }
   },
 
   getStyles() {
@@ -80,6 +131,26 @@ Module.register("MMM-UCLStandings", {
       return wrapper;
     }
 
+    if (this.favoriteTeamName) {
+      const favoriteWrapper = document.createElement("div");
+      favoriteWrapper.className = "ucl-favorite";
+
+      if (this.favoriteTeamLogoUrl) {
+        const logo = document.createElement("img");
+        logo.className = "ucl-favorite-logo";
+        logo.src = this.favoriteTeamLogoUrl;
+        logo.alt = `${this.favoriteTeamName} logo`;
+        favoriteWrapper.appendChild(logo);
+      }
+
+      const name = document.createElement("div");
+      name.className = "ucl-favorite-name medium bright";
+      name.textContent = this.favoriteTeamName;
+      favoriteWrapper.appendChild(name);
+
+      wrapper.appendChild(favoriteWrapper);
+    }
+
     if (this.config.showHeader) {
       const title = document.createElement("div");
       title.className = "ucl-header bright";
@@ -125,10 +196,22 @@ Module.register("MMM-UCLStandings", {
 
         if (column.key === "team") {
           cell.classList.add("team");
-          if (typeof value === "string" && value.toLowerCase().includes("arsenal")) {
-            const bold = document.createElement("strong");
-            bold.textContent = value;
-            cell.appendChild(bold);
+          if (typeof value === "string") {
+            const normalizedTeam = value.toLowerCase();
+            const isFavorite =
+              this.favoriteTeamNormalized &&
+              (normalizedTeam === this.favoriteTeamNormalized ||
+                normalizedTeam.includes(this.favoriteTeamNormalized) ||
+                this.favoriteTeamNormalized.includes(normalizedTeam));
+            const isDefaultArsenal = !this.favoriteTeamNormalized && normalizedTeam.includes("arsenal");
+
+            if (isFavorite || isDefaultArsenal) {
+              const bold = document.createElement("strong");
+              bold.textContent = value;
+              cell.appendChild(bold);
+            } else {
+              cell.textContent = value;
+            }
           } else {
             cell.textContent = value;
           }
