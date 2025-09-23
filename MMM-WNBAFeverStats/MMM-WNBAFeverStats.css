@@ -1,0 +1,88 @@
+.mmm-wnba-fever-stats {
+  font-size: 16px;
+  line-height: 1.4;
+}
+
+.MMM-WNBAFeverStats .module-header {
+  font-weight: 700;
+}
+
+.mmm-wnba-fever-stats .loading,
+.mmm-wnba-fever-stats .error,
+.mmm-wnba-fever-stats .no-data {
+  text-align: center;
+  padding: 0.5rem 0;
+}
+
+.mmm-wnba-fever-stats .section-title {
+  font-weight: 600;
+  margin-bottom: 0.25rem;
+}
+
+.mmm-wnba-fever-stats .section-title .status {
+  color: #ff4081;
+  margin-right: 0.5rem;
+}
+
+.mmm-wnba-fever-stats .section-title .matchup {
+  font-weight: 700;
+}
+
+.mmm-wnba-fever-stats .venue {
+  font-size: 0.9em;
+  color: #aaa;
+  margin-bottom: 0.75rem;
+}
+
+.mmm-wnba-fever-stats .stats-table {
+  width: 100%;
+  border-collapse: collapse;
+  margin-bottom: 0.75rem;
+}
+
+.mmm-wnba-fever-stats .stats-table th,
+.mmm-wnba-fever-stats .stats-table td {
+  padding: 0.25rem 0.5rem;
+  text-align: left;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.mmm-wnba-fever-stats .stats-table th {
+  font-size: 0.85em;
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+}
+
+.mmm-wnba-fever-stats .stats-table td {
+  font-size: 0.95em;
+}
+
+.mmm-wnba-fever-stats .stats-table td.player {
+  font-weight: 600;
+}
+
+.mmm-wnba-fever-stats .upcoming-list {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+}
+
+.mmm-wnba-fever-stats .upcoming-list li {
+  padding: 0.5rem 0;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+}
+
+.mmm-wnba-fever-stats .upcoming-list li:last-child {
+  border-bottom: none;
+}
+
+.mmm-wnba-fever-stats .upcoming-list .opponent {
+  display: inline-block;
+  min-width: 8rem;
+  font-weight: 600;
+}
+
+.mmm-wnba-fever-stats .upcoming-list .datetime {
+  margin-left: 0.5rem;
+  color: #ccc;
+}
