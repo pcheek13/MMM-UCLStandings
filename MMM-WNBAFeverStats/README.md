@@ -5,7 +5,8 @@ MagicMirror² module that keeps Indiana Fever fans up to date with live WNBA pla
 ## Features
 
 - Live game detection powered by the public ESPN WNBA API.
-- Player level stat lines for points, rebounds, assists, steals, and minutes played.
+- Player level stat lines for points, rebounds, assists, and steals.
+
 - Automatic scoreboard with opponent, venue, and current game clock description.
 - Upcoming schedule list (up to three entries) whenever no games are live.
 - Configurable favorite team identifier, title text, and update interval.

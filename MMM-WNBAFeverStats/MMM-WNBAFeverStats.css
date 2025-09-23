@@ -3,6 +3,11 @@
   line-height: 1.4;
 }
 
+.MMM-WNBAFeverStats .module-header {
+  font-weight: 700;
+}
+
+
 .mmm-wnba-fever-stats .loading,
 .mmm-wnba-fever-stats .error,
 .mmm-wnba-fever-stats .no-data {

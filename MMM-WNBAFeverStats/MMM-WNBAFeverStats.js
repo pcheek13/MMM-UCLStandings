@@ -87,7 +87,7 @@ Module.register("MMM-WNBAFeverStats", {
 
     const thead = document.createElement("thead");
     const headerRow = document.createElement("tr");
-    ["Player", "MIN", "PTS", "REB", "AST", "STL"].forEach((label) => {
+    ["Player", "PTS", "REB", "AST", "STL"].forEach((label) => {
       const th = document.createElement("th");
       th.innerText = label;
       headerRow.appendChild(th);
@@ -104,7 +104,9 @@ Module.register("MMM-WNBAFeverStats", {
       nameCell.innerText = player.name;
       row.appendChild(nameCell);
 
-      const stats = [player.minutes, player.points, player.rebounds, player.assists, player.steals];
+
+      const stats = [player.points, player.rebounds, player.assists, player.steals];
+
       stats.forEach((value) => {
         const td = document.createElement("td");
         td.innerText = value || "-";
@@ -117,7 +119,9 @@ Module.register("MMM-WNBAFeverStats", {
     if (!tbody.hasChildNodes()) {
       const row = document.createElement("tr");
       const cell = document.createElement("td");
-      cell.colSpan = 6;
+
+      cell.colSpan = 5;
+
       cell.className = "no-data";
       cell.innerText = "Live player stats are not currently available.";
       row.appendChild(cell);

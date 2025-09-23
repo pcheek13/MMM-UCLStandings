@@ -148,7 +148,6 @@ module.exports = NodeHelper.create({
         id: info.id,
         name: info.displayName || info.shortName || "Unknown",
         position: info.position && info.position.abbreviation,
-        minutes: statLine.MIN || statLine.Minutes || "",
         points: statLine.PTS || statLine.Points || "",
         rebounds: statLine.REB || statLine.Rebounds || "",
         assists: statLine.AST || statLine.Assists || "",
