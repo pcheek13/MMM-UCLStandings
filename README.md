@@ -1,13 +1,13 @@
 # MMM-UCLStandings
 
-A [MagicMirror²](https://magicmirror.builders/) module that renders the live UEFA Champions League league-phase table. The module consumes the open data published by the [openfootball](https://github.com/openfootball) project, calculates the standings in Node.js, and shows them on your mirror with your selected favorite team (Arsenal by default) highlighted in bold text.
+A [MagicMirror²](https://magicmirror.builders/) module that renders the live UEFA Champions League league-phase table. The module consumes the official [football-data.org](https://www.football-data.org/) API, displays club crests, highlights your selected favorite team (Arsenal by default), and surfaces its next scheduled Champions League fixtures.
 
 ## Features
 
-- Automatically downloads the most recent results for the selected season from openfootball and gracefully falls back when the requested season file is not yet published.
-- Computes the league-phase standings (points, goal difference, wins, etc.) in the Node helper.
-- Displays a responsive table in the MagicMirror UI with configurable row count and header visibility.
-- Highlights your favorite club in **bold** (defaults to Arsenal) and can display its crest above the table.
+- Pulls real-time league-phase standings directly from football-data.org (requires a free API token).
+- Renders club crests alongside team names and bolds your configured favorite club.
+- Shows the favorite club's crest at the top of the module and lists its next three UEFA Champions League matches with opponent, date, and location.
+- Offers configurable refresh intervals, maximum visible rows (favorite team is always shown), optional headers, and optional upcoming-match display.
 
 ## Installation
 
@@ -29,13 +29,15 @@ Add the module to the `modules` array in your `config/config.js` file:
   module: "MMM-UCLStandings",
   position: "top_left",
   config: {
-    maxRows: 12,
+    apiAuthToken: "YOUR_FOOTBALL_DATA_TOKEN",
+    maxRows: 10,
     updateInterval: 30 * 60 * 1000,
     showHeader: true,
     season: "latest",
     favoriteTeam: "Arsenal",
     favoriteTeamLogoUrl: null,
-    enableSeasonFallback: true
+    showUpcomingMatches: true,
+    upcomingMatchLimit: 3
   }
 }
 ```
@@ -44,30 +46,38 @@ Add the module to the `modules` array in your `config/config.js` file:
 
 | Option | Default | Description |
 | ------ | ------- | ----------- |
-| `maxRows` | `12` | Number of teams to display. Set to `0` or `null` to show all teams. |
-| `updateInterval` | `1800000` | Time in milliseconds between refreshes. |
+| `apiAuthToken` | `""` | Your football-data.org API token. Requests will fail without a valid token. |
+| `maxRows` | `10` | Number of teams to display. The module always includes the favorite club even if it falls outside this limit. Set to `0` or `null` to show all teams. |
+| `updateInterval` | `1800000` | Time in milliseconds between refreshes (default 30 minutes). |
 | `showHeader` | `true` | Show or hide the module header. |
-| `season` | `"latest"` | Season directory to request from openfootball. Use `"latest"` (default) or `"auto"` to always attempt the newest season. |
+| `season` | `"latest"` | Set to a specific starting year (e.g., `"2024"`) to lock the table to that campaign. Leave as `"latest"` to follow the current season. |
 | `favoriteTeam` | `"Arsenal"` | Team name to emphasize in the table and to show above the standings. Leave empty to disable the favorite display. |
-| `favoriteTeamLogoUrl` | `null` | Optional URL to the crest for the favorite team. When omitted the module checks `teamLogos` for a match. |
-| `teamLogos` | `{ arsenal: "https://upload.wikimedia.org/wikipedia/en/5/53/Arsenal_FC.svg" }` | Map of lower-case team names to logo URLs. Extend or override this object in your config if you need additional crests. |
-| `enableSeasonFallback` | `true` | When `true`, the helper automatically falls back to the most recent season with published data if the requested season (for example `2025-26`) is missing. Set to `false` to only attempt the specific season. |
+| `favoriteTeamLogoUrl` | `null` | Optional override URL for the favorite team crest. When omitted, the crest provided by football-data.org is used. |
+| `showUpcomingMatches` | `true` | Set to `false` to hide the upcoming match list. |
+| `upcomingMatchLimit` | `3` | Number of future fixtures to display for the favorite club (maximum enforced by football-data.org is 10). |
+
+### football-data.org API setup
+
+1. Sign up for a free developer account at [football-data.org](https://www.football-data.org/client/register).
+2. Generate a personal API token from your dashboard.
+3. Paste the token into the module configuration as `apiAuthToken`.
+
+Tokens are rate-limited (typically 10 requests per minute on the free tier). The default `updateInterval` of 30 minutes respects those limits.
 
 ### Favorite team crest tips
 
-- Provide a `favoriteTeamLogoUrl` that points to a PNG or SVG hosted on a reliable CDN (for example, on Wikimedia) for the crispest image on the mirror.
-- To support multiple favorites over time, extend `teamLogos` in your module configuration: any key you add should be the lower-case version of the team name returned by the standings data.
-- If no crest can be resolved, the favorite team name still renders above the standings without an image so the module remains functional.
+- If you prefer a custom crest, supply a `favoriteTeamLogoUrl` pointing to a PNG or SVG hosted on a reliable CDN (for example, on Wikimedia Commons).
+- When no override is provided, the official crest returned by football-data.org is used automatically.
 
 ## Data source
 
-Match data is retrieved from [`openfootball/champions-league`](https://github.com/openfootball/champions-league), specifically the season file at `https://raw.githubusercontent.com/openfootball/champions-league/master/<season>/cl.txt`. The helper requests the newest season first and, if that season file returns `404 Not Found` (as with the 2025-26 campaign prior to publication), it steps back through earlier seasons until data is available.
+Standings and fixture data are retrieved from the [football-data.org v4 API](https://www.football-data.org/documentation/quickstart). The module requests `https://api.football-data.org/v4/competitions/CL/standings` for table data and, when a favorite club is configured, `https://api.football-data.org/v4/teams/<TEAM_ID>/matches` for the next scheduled UEFA Champions League fixtures.
 
 ## Development
 
 - `MMM-UCLStandings.js` contains the front-end code that builds the DOM in MagicMirror.
-- `node_helper.js` handles downloading and parsing the data on the backend.
-- `MMM-UCLStandings.css` defines the visual style for the standings table.
+- `node_helper.js` handles downloading standings and fixture data from football-data.org.
+- `MMM-UCLStandings.css` defines the visual style for the standings table and upcoming match list.
 
 Run `npm install` to install dependencies for local development.
 

@@ -1,7 +1,7 @@
 {
   "name": "mmm-uclstandings",
   "version": "1.0.0",
-  "description": "MagicMirror² module that displays the live UEFA Champions League table using openfootball data.",
+  "description": "MagicMirror² module that displays the live UEFA Champions League table using football-data.org.",
   "main": "MMM-UCLStandings.js",
   "scripts": {
     "test": "echo \"No tests specified\""

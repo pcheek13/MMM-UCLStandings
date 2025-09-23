@@ -4,15 +4,14 @@ Module.register("MMM-UCLStandings", {
   defaults: {
     updateInterval: 30 * 60 * 1000,
     animationSpeed: 1000,
-    maxRows: 12,
+    maxRows: 10,
     showHeader: true,
     season: "latest",
-    enableSeasonFallback: true,
     favoriteTeam: "Arsenal",
     favoriteTeamLogoUrl: null,
-    teamLogos: {
-      arsenal: "https://upload.wikimedia.org/wikipedia/en/5/53/Arsenal_FC.svg"
-    }
+    apiAuthToken: "",
+    showUpcomingMatches: true,
+    upcomingMatchLimit: 3
   },
 
   start() {
@@ -24,6 +23,9 @@ Module.register("MMM-UCLStandings", {
     this.favoriteTeamNormalized = null;
     this.favoriteTeamLogoUrl = null;
     this.displaySeason = null;
+    this.favoriteTeamId = null;
+    this.favoriteUpcomingMatches = [];
+
     this.setFavoriteTeamData();
     this.scheduleUpdate(0);
   },
@@ -42,30 +44,8 @@ Module.register("MMM-UCLStandings", {
       this.favoriteTeamNormalized = null;
     }
 
-    const logoMap = this.config.teamLogos || {};
-
-    if (this.favoriteTeamNormalized) {
-      if (typeof this.config.favoriteTeamLogoUrl === "string" && this.config.favoriteTeamLogoUrl.trim().length > 0) {
-        this.favoriteTeamLogoUrl = this.config.favoriteTeamLogoUrl.trim();
-      } else {
-        this.favoriteTeamLogoUrl = logoMap[this.favoriteTeamNormalized] || null;
-
-        if (!this.favoriteTeamLogoUrl) {
-          const normalizedKeys = Object.keys(logoMap);
-          const matchKey = normalizedKeys.find(
-            (key) =>
-              key === this.favoriteTeamNormalized ||
-              key.includes(this.favoriteTeamNormalized) ||
-              this.favoriteTeamNormalized.includes(key)
-          );
-
-          if (matchKey) {
-            this.favoriteTeamLogoUrl = logoMap[matchKey];
-          }
-        }
-      }
-    } else {
-      this.favoriteTeamLogoUrl = null;
+    if (typeof this.config.favoriteTeamLogoUrl === "string" && this.config.favoriteTeamLogoUrl.trim().length > 0) {
+      this.favoriteTeamLogoUrl = this.config.favoriteTeamLogoUrl.trim();
     }
   },
 
@@ -81,12 +61,14 @@ Module.register("MMM-UCLStandings", {
 
     this.updateTimer = setTimeout(() => {
       this.sendSocketNotification("UCL_FETCH_STANDINGS", {
-        updateInterval: this.config.updateInterval,
         season: this.config.season,
-        enableSeasonFallback:
-          typeof this.config.enableSeasonFallback === "boolean"
-            ? this.config.enableSeasonFallback
-            : true
+        favoriteTeam: this.favoriteTeamName || this.config.favoriteTeam,
+        apiAuthToken:
+          typeof this.config.apiAuthToken === "string" ? this.config.apiAuthToken.trim() : "",
+        upcomingMatchLimit:
+          typeof this.config.upcomingMatchLimit === "number" && this.config.upcomingMatchLimit > 0
+            ? Math.floor(this.config.upcomingMatchLimit)
+            : this.defaults.upcomingMatchLimit
       });
     }, nextLoad);
   },
@@ -95,6 +77,18 @@ Module.register("MMM-UCLStandings", {
     if (notification === "UCL_STANDINGS") {
       this.table = payload.table || [];
       this.displaySeason = payload.season || null;
+      this.favoriteTeamId = payload.favoriteTeam && payload.favoriteTeam.teamId ? payload.favoriteTeam.teamId : null;
+
+      if (payload.favoriteTeam && payload.favoriteTeam.name) {
+        this.favoriteTeamName = payload.favoriteTeam.name;
+        this.favoriteTeamNormalized = payload.favoriteTeam.name.toLowerCase();
+      }
+
+      if (!this.config.favoriteTeamLogoUrl && payload.favoriteTeam && payload.favoriteTeam.crest) {
+        this.favoriteTeamLogoUrl = payload.favoriteTeam.crest;
+      }
+
+      this.favoriteUpcomingMatches = Array.isArray(payload.upcomingMatches) ? payload.upcomingMatches : [];
       this.loaded = true;
       this.error = null;
       this.updateDom(this.config.animationSpeed);
@@ -192,54 +186,160 @@ Module.register("MMM-UCLStandings", {
     table.appendChild(thead);
 
     const tbody = document.createElement("tbody");
-    const rows = this.config.maxRows ? this.table.slice(0, this.config.maxRows) : this.table;
+    const limit = typeof this.config.maxRows === "number" && this.config.maxRows > 0 ? this.config.maxRows : this.table.length;
+    const rows = [];
 
-    rows.forEach((entry) => {
-      const row = document.createElement("tr");
-      columns.forEach((column) => {
-        const cell = document.createElement("td");
-        let value = entry[column.key];
+    this.table.forEach((entry) => {
+      const isFavorite = this.isFavoriteTeam(entry);
+      if (rows.length < limit || isFavorite) {
+        rows.push(entry);
+      }
+    });
 
-        if (column.key === "team") {
-          cell.classList.add("team");
-          if (typeof value === "string") {
-            const normalizedTeam = value.toLowerCase();
-            const isFavorite =
-              this.favoriteTeamNormalized &&
-              (normalizedTeam === this.favoriteTeamNormalized ||
-                normalizedTeam.includes(this.favoriteTeamNormalized) ||
-                this.favoriteTeamNormalized.includes(normalizedTeam));
-            const isDefaultArsenal = !this.favoriteTeamNormalized && normalizedTeam.includes("arsenal");
+    rows
+      .sort((a, b) => a.position - b.position)
+      .forEach((entry) => {
+        const row = document.createElement("tr");
+        columns.forEach((column) => {
+          const cell = document.createElement("td");
+          let value = entry[column.key];
 
-            if (isFavorite || isDefaultArsenal) {
-              const bold = document.createElement("strong");
-              bold.textContent = value;
-              cell.appendChild(bold);
-            } else {
-              cell.textContent = value;
+          if (column.key === "team") {
+            cell.classList.add("team");
+            const wrapper = document.createElement("div");
+            wrapper.className = "ucl-team";
+
+            if (entry.crest) {
+              const crest = document.createElement("img");
+              crest.className = "ucl-team-logo";
+              crest.src = entry.crest;
+              crest.alt = `${value} crest`;
+              wrapper.appendChild(crest);
             }
+
+            const nameElement = this.createTeamNameElement(value, entry);
+            wrapper.appendChild(nameElement);
+
+            cell.appendChild(wrapper);
           } else {
+            if (column.key === "goalDifference" && typeof value === "number") {
+              value = value > 0 ? `+${value}` : `${value}`;
+            }
             cell.textContent = value;
           }
-        } else {
-          if (column.key === "goalDifference" && typeof value === "number") {
-            value = value > 0 ? `+${value}` : `${value}`;
+
+          if (column.key === "position") {
+            cell.classList.add("position");
           }
-          cell.textContent = value;
-        }
 
-        if (column.key === "position") {
-          cell.classList.add("position");
-        }
-
-        row.appendChild(cell);
+          row.appendChild(cell);
+        });
+        tbody.appendChild(row);
       });
-      tbody.appendChild(row);
-    });
 
     table.appendChild(tbody);
     wrapper.appendChild(table);
 
+    if (this.favoriteUpcomingMatches.length > 0 && this.config.showUpcomingMatches !== false) {
+      const matchesWrapper = document.createElement("div");
+      matchesWrapper.className = "ucl-upcoming";
+
+      const title = document.createElement("div");
+      title.className = "ucl-upcoming-title medium bright";
+      title.textContent = `Next ${this.favoriteUpcomingMatches.length === 1 ? "Match" : "Matches"}`;
+      matchesWrapper.appendChild(title);
+
+      const list = document.createElement("ul");
+      list.className = "ucl-upcoming-list";
+
+      this.favoriteUpcomingMatches.forEach((match) => {
+        const item = document.createElement("li");
+        item.className = "ucl-upcoming-item";
+
+        const opponent = document.createElement("span");
+        opponent.className = "ucl-upcoming-opponent";
+        opponent.textContent = match.displayOpponent;
+
+        const date = document.createElement("span");
+        date.className = "ucl-upcoming-date";
+        date.textContent = this.formatMatchDate(match.utcDate);
+
+        const location = document.createElement("span");
+        location.className = "ucl-upcoming-location dimmed";
+        location.textContent = match.location;
+
+        item.appendChild(opponent);
+        item.appendChild(date);
+        item.appendChild(location);
+        list.appendChild(item);
+      });
+
+      matchesWrapper.appendChild(list);
+      wrapper.appendChild(matchesWrapper);
+    }
+
     return wrapper;
+  },
+
+  isFavoriteTeam(entry) {
+    if (!entry) {
+      return false;
+    }
+
+    if (this.favoriteTeamId && entry.teamId === this.favoriteTeamId) {
+      return true;
+    }
+
+    if (this.favoriteTeamNormalized && typeof entry.team === "string") {
+      const normalizedTeam = entry.team.toLowerCase();
+      if (normalizedTeam === this.favoriteTeamNormalized) {
+        return true;
+      }
+      if (entry.shortName && entry.shortName.toLowerCase() === this.favoriteTeamNormalized) {
+        return true;
+      }
+      if (entry.tla && entry.tla.toLowerCase() === this.favoriteTeamNormalized) {
+        return true;
+      }
+      return (
+        normalizedTeam.includes(this.favoriteTeamNormalized) ||
+        this.favoriteTeamNormalized.includes(normalizedTeam)
+      );
+    }
+
+    return false;
+  },
+
+  createTeamNameElement(value, entry) {
+    const name = typeof value === "string" ? value : String(value || "");
+    const isFavorite = this.isFavoriteTeam(entry);
+
+    if (isFavorite) {
+      const strong = document.createElement("strong");
+      strong.textContent = name;
+      return strong;
+    }
+
+    const span = document.createElement("span");
+    span.textContent = name;
+    return span;
+  },
+
+  formatMatchDate(isoString) {
+    if (!isoString) {
+      return "TBD";
+    }
+
+    const date = new Date(isoString);
+    if (Number.isNaN(date.getTime())) {
+      return isoString;
+    }
+
+    return date.toLocaleString(undefined, {
+      month: "short",
+      day: "numeric",
+      hour: "2-digit",
+      minute: "2-digit"
+    });
   }
 });
