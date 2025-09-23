@@ -1,0 +1,24 @@
+{
+  "name": "mmm-uclstandings",
+  "version": "1.0.0",
+  "description": "MagicMirror² module that displays the live UEFA Champions League table using openfootball data.",
+  "main": "MMM-UCLStandings.js",
+  "scripts": {
+    "test": "echo \"No tests specified\""
+  },
+  "keywords": [
+    "magicmirror",
+    "magicmirror2",
+    "module",
+    "soccer",
+    "uefa",
+    "champions league",
+    "standings"
+  ],
+  "author": "",
+  "license": "MIT",
+  "dependencies": {
+    "https-proxy-agent": "^7.0.2",
+    "node-fetch": "^2.7.0"
+  }
+}
