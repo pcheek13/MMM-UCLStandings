@@ -1,0 +1,30 @@
+# Dependency directories
+node_modules/
+
+# Logs
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+
+# Runtime data
+.DS_Store
+
+# Coverage directories
+coverage/
+
+# Build outputs
+/dist/
+/build/
+
+# Environment files
+.env
+.env.*
+
+# Lock and cache files created by package managers
+.pnpm-store/
+.npm/
+.cache/
+
+# MagicMirror config overrides
+config.js
+
