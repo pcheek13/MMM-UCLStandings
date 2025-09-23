@@ -27,7 +27,6 @@ Module.register("MMM-UCLStandings", {
     this.favoriteUpcomingMatches = [];
 
     this.setFavoriteTeamData();
-
     this.scheduleUpdate(0);
   },
 
