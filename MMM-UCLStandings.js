@@ -24,9 +24,7 @@ Module.register("MMM-UCLStandings", {
     this.favoriteTeamNormalized = null;
     this.favoriteTeamLogoUrl = null;
     this.displaySeason = null;
-
     this.setFavoriteTeamData();
-
     this.scheduleUpdate(0);
   },
 
