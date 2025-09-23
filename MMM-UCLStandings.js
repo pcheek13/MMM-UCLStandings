@@ -6,7 +6,8 @@ Module.register("MMM-UCLStandings", {
     animationSpeed: 1000,
     maxRows: 12,
     showHeader: true,
-    season: "2024-25",
+    season: "latest",
+    enableSeasonFallback: true,
     favoriteTeam: "Arsenal",
     favoriteTeamLogoUrl: null,
     teamLogos: {
@@ -16,16 +17,14 @@ Module.register("MMM-UCLStandings", {
 
   start() {
     this.table = [];
-    this.lastUpdated = null;
     this.loaded = false;
     this.error = null;
     this.updateTimer = null;
     this.favoriteTeamName = null;
     this.favoriteTeamNormalized = null;
     this.favoriteTeamLogoUrl = null;
-
+    this.displaySeason = null;
     this.setFavoriteTeamData();
-
     this.scheduleUpdate(0);
   },
 
@@ -83,7 +82,11 @@ Module.register("MMM-UCLStandings", {
     this.updateTimer = setTimeout(() => {
       this.sendSocketNotification("UCL_FETCH_STANDINGS", {
         updateInterval: this.config.updateInterval,
-        season: this.config.season
+        season: this.config.season,
+        enableSeasonFallback:
+          typeof this.config.enableSeasonFallback === "boolean"
+            ? this.config.enableSeasonFallback
+            : true
       });
     }, nextLoad);
   },
@@ -91,7 +94,7 @@ Module.register("MMM-UCLStandings", {
   socketNotificationReceived(notification, payload) {
     if (notification === "UCL_STANDINGS") {
       this.table = payload.table || [];
-      this.lastUpdated = payload.fetchedAt || null;
+      this.displaySeason = payload.season || null;
       this.loaded = true;
       this.error = null;
       this.updateDom(this.config.animationSpeed);
@@ -154,7 +157,10 @@ Module.register("MMM-UCLStandings", {
     if (this.config.showHeader) {
       const title = document.createElement("div");
       title.className = "ucl-header bright";
-      title.textContent = "UEFA Champions League Table";
+      const seasonLabel = this.displaySeason || (this.config.season !== "latest" ? this.config.season : "");
+      title.textContent = seasonLabel
+        ? `UEFA Champions League Table (${seasonLabel})`
+        : "UEFA Champions League Table";
       wrapper.appendChild(title);
     }
 
@@ -233,14 +239,6 @@ Module.register("MMM-UCLStandings", {
 
     table.appendChild(tbody);
     wrapper.appendChild(table);
-
-    if (this.lastUpdated) {
-      const updated = document.createElement("div");
-      updated.className = "updated small dimmed";
-      const date = new Date(this.lastUpdated);
-      updated.textContent = `Last updated: ${date.toLocaleString()}`;
-      wrapper.appendChild(updated);
-    }
 
     return wrapper;
   }

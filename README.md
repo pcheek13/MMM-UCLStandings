@@ -4,7 +4,7 @@ A [MagicMirror²](https://magicmirror.builders/) module that renders the live UE
 
 ## Features
 
-- Automatically downloads the most recent results for the selected season from openfootball.
+- Automatically downloads the most recent results for the selected season from openfootball and gracefully falls back when the requested season file is not yet published.
 - Computes the league-phase standings (points, goal difference, wins, etc.) in the Node helper.
 - Displays a responsive table in the MagicMirror UI with configurable row count and header visibility.
 - Highlights your favorite club in **bold** (defaults to Arsenal) and can display its crest above the table.
@@ -32,9 +32,10 @@ Add the module to the `modules` array in your `config/config.js` file:
     maxRows: 12,
     updateInterval: 30 * 60 * 1000,
     showHeader: true,
-    season: "2024-25",
+    season: "latest",
     favoriteTeam: "Arsenal",
-    favoriteTeamLogoUrl: null
+    favoriteTeamLogoUrl: null,
+    enableSeasonFallback: true
   }
 }
 ```
@@ -46,10 +47,11 @@ Add the module to the `modules` array in your `config/config.js` file:
 | `maxRows` | `12` | Number of teams to display. Set to `0` or `null` to show all teams. |
 | `updateInterval` | `1800000` | Time in milliseconds between refreshes. |
 | `showHeader` | `true` | Show or hide the module header. |
-| `season` | `"2024-25"` | Season directory to request from openfootball. |
+| `season` | `"latest"` | Season directory to request from openfootball. Use `"latest"` (default) or `"auto"` to always attempt the newest season. |
 | `favoriteTeam` | `"Arsenal"` | Team name to emphasize in the table and to show above the standings. Leave empty to disable the favorite display. |
 | `favoriteTeamLogoUrl` | `null` | Optional URL to the crest for the favorite team. When omitted the module checks `teamLogos` for a match. |
 | `teamLogos` | `{ arsenal: "https://upload.wikimedia.org/wikipedia/en/5/53/Arsenal_FC.svg" }` | Map of lower-case team names to logo URLs. Extend or override this object in your config if you need additional crests. |
+| `enableSeasonFallback` | `true` | When `true`, the helper automatically falls back to the most recent season with published data if the requested season (for example `2025-26`) is missing. Set to `false` to only attempt the specific season. |
 
 ### Favorite team crest tips
 
@@ -59,7 +61,7 @@ Add the module to the `modules` array in your `config/config.js` file:
 
 ## Data source
 
-Match data is retrieved from [`openfootball/champions-league`](https://github.com/openfootball/champions-league), specifically the season file at `https://raw.githubusercontent.com/openfootball/champions-league/master/<season>/cl.txt`. The module parses results from the league phase and calculates the current table locally.
+Match data is retrieved from [`openfootball/champions-league`](https://github.com/openfootball/champions-league), specifically the season file at `https://raw.githubusercontent.com/openfootball/champions-league/master/<season>/cl.txt`. The helper requests the newest season first and, if that season file returns `404 Not Found` (as with the 2025-26 campaign prior to publication), it steps back through earlier seasons until data is available.
 
 ## Development
 
